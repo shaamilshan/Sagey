@@ -2,7 +2,8 @@
 import axios from "axios";
 import { handleError } from "./configurations";
 
-export const URL = import.meta.env.VITE_BASE_URL;
+export const URL = "https://sagey.in/api";
+// VITE_BASE_URL="https://sagey.in/api"
 // export const URL = "http://localhost:3000/api";
 // export const URL = "https://hela-ecommerce.onrender.com/api";
 // export const URL = "https://hella-com-backend.up.railway.app/api";
