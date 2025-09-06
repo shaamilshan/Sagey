@@ -45,8 +45,8 @@ const CreateCategories = () => {
 
   const validationSchema = Yup.object().shape({
     title: Yup.string().required("Title is required"),
-    description: Yup.string().required("Description is required"),
-    imageURL: Yup.mixed().required("File is required"),
+    description: Yup.string(), // Optional field
+    imageURL: Yup.mixed(), // Optional field
   });
 
   return (

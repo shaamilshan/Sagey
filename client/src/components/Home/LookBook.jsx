@@ -1,15 +1,13 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
-import model1 from '../../../../server/public/products/lookbook/lkbk1.jpeg'
-import model2 from '../../../../server/public/products/lookbook/lkbk2.jpeg'
-import model3 from '../../../../server/public/products/lookbook/lkbk3.jpeg'
-import model4 from '../../../../server/public/products/lookbook/lkbk4.jpeg'
-import model5 from '../../../../server/public/products/lookbook/lkbk5.jpeg'
-import model6 from '../../../../server/public/products/lookbook/lkbk6.jpeg'
-import model7 from '../../../../server/public/products/lookbook/lkbk7.jpeg'
-import model8 from '../../../../server/public/products/lookbook/lkbk8.jpeg'
-import model9 from '../../../../server/public/products/lookbook/lkbk9.jpeg'
-import model10 from '../../../../server/public/products/lookbook/lkbk10.jpeg'
+import model1 from '../../assets/lookbook/lkbk1.jpeg'
+import model2 from '../../assets/lookbook/lkbk2.jpeg'
+import model3 from '../../assets/lookbook/lkbk3.jpeg'
+import model4 from '../../assets/lookbook/lkbk4.jpeg'
+import model7 from '../../assets/lookbook/lkbk7.jpeg'
+import model8 from '../../assets/lookbook/lkbk8.jpeg'
+import model9 from '../../assets/lookbook/lkbk9.jpeg'
+import model10 from '../../assets/lookbook/lkbk10.jpeg'
 import aboutImg from '../../assets/about.png';
 
 import whatsappIcon from '../../assets/whats.svg'
@@ -36,79 +34,16 @@ const SocialIcon = ({ type, size = "w-10 h-10", onClick, className = "" }) => {
   );
 };
 
-const looks = [
-  {
-    id: 1,
-    title: 'Casual Stripes',
-    images: [
-        model1,
-        model10
-    ]
-  },
-  {
-    id: 2,
-    title: 'Modern Minimal',
-    images: [
-        model2,
-        model9
-    ]
-  },
-  {
-    id: 3,
-    title: 'Elegant Earth',
-    images: [
-        model3,
-        model8
-    ]
-  },
-  {
-    id: 4,
-    title: 'Casual Stripes',
-    images: [
-        model4,
-        model7
-    ]
-  },
-  {
-    id: 5,
-    title: 'Modern Minimal',
-    images: [
-        model5,
-        model6
-    ]
-  },
-  {
-    id: 6,
-    title: 'Elegant Earth',
-    images: [
-        model2,
-        model9
-    ]
-  },
-  {
-    id: 7,
-    title: 'Casual Stripes',
-    images: [
-        model10,
-        model6
-    ]
-  },
-  {
-    id: 8,
-    title: 'Modern Minimal',
-    images: [
-        model7,
-        model2
-    ]
-  },
-  {
-    id: 9,
-    title: 'Elegant Earth',
-    images: [
-        model3,
-        model4
-    ]
-  }
+// Array of all lookbook images for the carousel
+const lookbookImages = [
+  model1,
+  model2,
+  model3,
+  model4,
+  model7,
+  model8,
+  model9,
+  model10
 ]
 
 const AboutSection = () => {
@@ -174,39 +109,76 @@ const AboutSection = () => {
 }
 
 const LookBook = () => {
-  // State to control showing more images
-  const [isShowMore, setIsShowMore] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const imagesPerRow = 4;
+  
+  // Auto-slide functionality
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prevIndex) => 
+        (prevIndex + 1) % lookbookImages.length
+      );
+    }, 3000); // Slide every 3 seconds
 
-  // Flatten all look images into one single array
-  const allImages = looks.flatMap(look => look.images);
+    return () => clearInterval(interval);
+  }, []);
 
-  // Function to handle "See More" button click
-  const handleShowMore = () => {
-    setIsShowMore(true);
+  // Get 4 images to display in current row
+  const getDisplayedImages = () => {
+    const displayed = [];
+    for (let i = 0; i < imagesPerRow; i++) {
+      const imageIndex = (currentIndex + i) % lookbookImages.length;
+      displayed.push({
+        src: lookbookImages[imageIndex],
+        index: imageIndex
+      });
+    }
+    return displayed;
   };
 
-  // Show either all or first 8 images
-  const displayedImages = isShowMore ? allImages : allImages.slice(0, 8);
+  const displayedImages = getDisplayedImages();
+
   return (
-    
     <div className="w-full bg-primary pb-12">
       {/* About Section */}
       <AboutSection />      
-      {/* Grid layout with 4 columns */}
-      <h2 className="text-4xl text-[#065c63] mb-8 text-white text-center mt-16">CHECK OUR LOOK-BOOK</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-0">
-            {displayedImages.map((image, index) => (
+      
+      {/* Lookbook Carousel Section */}
+      <div className="mt-16">
+        <h2 className="text-4xl text-[#065c63] mb-8 text-white text-center">CHECK OUR LOOK-BOOK</h2>
+        
+        {/* Carousel Container */}
+        <div className="overflow-hidden">
+          <div className="flex transition-transform duration-500 ease-in-out">
+            {displayedImages.map((item, index) => (
               <div 
-                key={index} 
-                className="relative w-full h-[500px] overflow-hidden " // Fixed height for all images
+                key={`${item.index}-${index}`}
+                className="flex-shrink-0 w-full sm:w-1/2 md:w-1/4 relative h-[500px] overflow-hidden"
               >
                 <img
-                  src={image}
-                  alt={`Look ${index + 1}`}
+                  src={item.src}
+                  alt={`Look ${item.index + 1}`}
                   className="object-cover w-full h-full transition-transform duration-500 hover:scale-105"
                 />
               </div>
             ))}
+          </div>
+        </div>
+        
+        {/* Slide Indicators */}
+        <div className="flex justify-center mt-6 space-x-2">
+          {lookbookImages.map((_, index) => (
+            <button
+              key={index}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                index === currentIndex 
+                  ? 'bg-white scale-125' 
+                  : 'bg-white/50 hover:bg-white/75'
+              }`}
+              onClick={() => setCurrentIndex(index)}
+            />
+          ))}
+        </div>
       </div>
     </div>
   )
