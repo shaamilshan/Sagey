@@ -29,8 +29,17 @@ const EditCategory = () => {
 
     const updatedFormData = new FormData();
     updatedFormData.append("name", value.title);
-    updatedFormData.append("description", value.description);
-    updatedFormData.append("imgURL", value.imageURL);
+    
+    // Only append description if it has a value
+    if (value.description && value.description.trim() !== "") {
+      updatedFormData.append("description", value.description);
+    }
+    
+    // Only append imageURL if a file is selected
+    if (value.imageURL) {
+      updatedFormData.append("imgURL", value.imageURL);
+    }
+    
     updatedFormData.append("isActive", value.isActive);
     setFormData(updatedFormData);
   };
@@ -125,7 +134,7 @@ const EditCategory = () => {
             {({ values, setFieldValue }) => (
               <Form className="lg:flex gap-5">
                 <div className="lg:w-1/3 mb-3 lg:mb-0">
-                  <h1 className="font-bold mb-3">Category Thumbnail</h1>
+                  <h1 className="font-bold mb-3">Category Thumbnail (Optional)</h1>
                   {values.imageURL && typeof values.imageURL === "string" ? (
                     <div className="bg-gray-100 py-5 rounded-lg text-center border-dashed border-2 h-80">
                       <div className="h-56">
@@ -192,7 +201,7 @@ const EditCategory = () => {
 
                   <p>
                     <label htmlFor="description" className="admin-label">
-                      Category Description
+                      Category Description (Optional)
                     </label>
                   </p>
                   <Field

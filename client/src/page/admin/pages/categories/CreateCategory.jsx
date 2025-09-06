@@ -26,8 +26,17 @@ const CreateCategories = () => {
 
     const updatedFormData = new FormData();
     updatedFormData.append("name", value.title);
-    updatedFormData.append("description", value.description);
-    updatedFormData.append("imgURL", value.imageURL);
+    
+    // Only append description if it has a value
+    if (value.description && value.description.trim() !== "") {
+      updatedFormData.append("description", value.description);
+    }
+    
+    // Only append imageURL if a file is selected
+    if (value.imageURL) {
+      updatedFormData.append("imgURL", value.imageURL);
+    }
+    
     setFormData(updatedFormData);
   };
 
@@ -100,7 +109,7 @@ const CreateCategories = () => {
             {({ values, setFieldValue }) => (
               <Form className="lg:flex gap-5">
                 <div className="lg:w-1/3 mb-3 lg:mb-0">
-                  <h1 className="font-bold mb-3">Product Thumbnail</h1>
+                  <h1 className="font-bold mb-3">Category Thumbnail (Optional)</h1>
                   <CustomSingleFileInput
                     onChange={(file) => {
                       setFieldValue("imageURL", file);
@@ -131,7 +140,7 @@ const CreateCategories = () => {
 
                   <p>
                     <label htmlFor="description" className="admin-label">
-                      Category Description
+                      Category Description (Optional)
                     </label>
                   </p>
                   <Field
