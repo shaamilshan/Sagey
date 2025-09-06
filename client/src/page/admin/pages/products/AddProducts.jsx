@@ -112,17 +112,20 @@ const AddProducts = () => {
     formData.append("status", status.toLowerCase());
 
     try {
-      // Compress the main image
+      // Compress the main image more aggressively for production
       if (imageURL && imageURL instanceof File) {
         const compressedImageURL = await imageCompression(imageURL, {
-          maxSizeMB: 4, // Reduced to 4MB for better compatibility
-          maxWidthOrHeight: 1920,
+          maxSizeMB: 2, // Reduced to 2MB for better upload reliability
+          maxWidthOrHeight: 1600, // Reduced resolution for smaller file size
           useWebWorker: true,
+          maxIteration: 10, // More compression iterations
+          initialQuality: 0.8 // Start with lower quality
         });
         formData.append("imageURL", compressedImageURL);
         console.log("Main image compressed:", {
-          original: imageURL.size,
-          compressed: compressedImageURL.size
+          original: `${(imageURL.size / (1024 * 1024)).toFixed(2)}MB`,
+          compressed: `${(compressedImageURL.size / (1024 * 1024)).toFixed(2)}MB`,
+          reduction: `${(((imageURL.size - compressedImageURL.size) / imageURL.size) * 100).toFixed(1)}%`
         });
       }
   
@@ -131,23 +134,44 @@ const AddProducts = () => {
         for (const file of moreImageURL) {
           if (file instanceof File) {
             const compressedFile = await imageCompression(file, {
-              maxSizeMB: 4,
-              maxWidthOrHeight: 1920,
+              maxSizeMB: 2, // Reduced to 2MB for better upload reliability
+              maxWidthOrHeight: 1600, // Reduced resolution
               useWebWorker: true,
+              maxIteration: 10,
+              initialQuality: 0.8
             });
             formData.append("moreImageURL", compressedFile);
             console.log("Additional image compressed:", {
-              original: file.size,
-              compressed: compressedFile.size
+              original: `${(file.size / (1024 * 1024)).toFixed(2)}MB`,
+              compressed: `${(compressedFile.size / (1024 * 1024)).toFixed(2)}MB`,
+              reduction: `${(((file.size - compressedFile.size) / file.size) * 100).toFixed(1)}%`
             });
           }
         }
       }
 
+      // Calculate total payload size
+      let totalSize = 0;
+      for (let pair of formData.entries()) {
+        if (pair[1] instanceof File) {
+          totalSize += pair[1].size;
+        }
+      }
+      console.log(`Total payload size: ${(totalSize / (1024 * 1024)).toFixed(2)}MB`);
+      
+      if (totalSize > 45 * 1024 * 1024) { // 45MB limit check
+        toast.error("Total file size too large. Please reduce image sizes or quantity.");
+        return;
+      }
+
       // Debug FormData contents
       console.log("FormData contents:");
       for (let pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
+        if (pair[1] instanceof File) {
+          console.log(pair[0], `File: ${pair[1].name} (${(pair[1].size / (1024 * 1024)).toFixed(2)}MB)`);
+        } else {
+          console.log(pair[0], pair[1]);
+        }
       }
   
       const result = await dispatch(createProduct(formData));
@@ -157,7 +181,11 @@ const AddProducts = () => {
       }
     } catch (error) {
       console.error("Product creation error:", error);
-      toast.error(`Failed to create product: ${error.message}`);
+      if (error.response && error.response.status === 413) {
+        toast.error("Files too large. Please reduce image sizes and try again.");
+      } else {
+        toast.error(`Failed to create product: ${error.message}`);
+      }
     }
   };
 

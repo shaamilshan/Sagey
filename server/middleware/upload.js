@@ -20,9 +20,11 @@ const storage = multer.diskStorage({
 const upload = multer({ 
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // Increased to 10MB limit
-    fieldSize: 10 * 1024 * 1024, // Increased to 10MB field size limit
-    files: 10 // Maximum number of files
+    fileSize: 50 * 1024 * 1024, // Increased to 50MB limit
+    fieldSize: 50 * 1024 * 1024, // Increased to 50MB field size limit
+    files: 10, // Maximum number of files
+    parts: 100, // Maximum number of non-file fields
+    headerPairs: 2000 // Maximum number of header key-value pairs
   },
   fileFilter: (req, file, cb) => {
     console.log('File upload attempt:', {

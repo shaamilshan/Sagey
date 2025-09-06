@@ -10,8 +10,8 @@ const app = express();
 
 // Mounting necessary middlewares.
 app.use(cookieParser());
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Increased from 10mb to 50mb
+app.use(express.json({ limit: '50mb' })); // Increased from 10mb to 50mb
 app.use(logger("dev"));
 
 // Serve static files from React build
@@ -78,18 +78,31 @@ app.use((error, req, res, next) => {
     message: error.message,
     stack: error.stack,
     url: req.url,
-    method: req.method
+    method: req.method,
+    type: error.type || 'unknown'
   });
   
   if (error.code === 'LIMIT_FILE_SIZE') {
-    return res.status(400).json({ 
-      error: 'File too large. Maximum file size is 10MB' 
+    return res.status(413).json({ 
+      error: 'File too large. Maximum file size is 50MB per file.' 
+    });
+  }
+  
+  if (error.code === 'LIMIT_FIELD_VALUE') {
+    return res.status(413).json({ 
+      error: 'Request payload too large. Maximum total size is 50MB.' 
     });
   }
   
   if (error.code === 'LIMIT_UNEXPECTED_FILE') {
     return res.status(400).json({ 
       error: 'Unexpected file field' 
+    });
+  }
+  
+  if (error.type === 'entity.too.large') {
+    return res.status(413).json({ 
+      error: 'Request entity too large. Please reduce file sizes or number of files.' 
     });
   }
   

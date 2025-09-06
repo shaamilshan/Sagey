@@ -24,6 +24,21 @@ const CustomSingleFileInput = ({ onChange }) => {
     setIsDragging(false);
 
     const file = e.dataTransfer.files[0]; // Only consider the first dropped file
+    
+    if (file) {
+      // Check file size (warn if over 10MB)
+      const fileSizeMB = file.size / (1024 * 1024);
+      if (fileSizeMB > 10) {
+        alert(`Warning: File size is ${fileSizeMB.toFixed(1)}MB. Large files will be compressed to reduce upload time.`);
+      }
+      
+      // Check if it's an image
+      if (!file.type.startsWith('image/')) {
+        alert('Please drop an image file.');
+        return;
+      }
+    }
+    
     setSelectedFile(file);
     onChange(file);
   };
@@ -34,6 +49,21 @@ const CustomSingleFileInput = ({ onChange }) => {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0]; // Only consider the first selected file
+    
+    if (file) {
+      // Check file size (warn if over 10MB)
+      const fileSizeMB = file.size / (1024 * 1024);
+      if (fileSizeMB > 10) {
+        alert(`Warning: File size is ${fileSizeMB.toFixed(1)}MB. Large files will be compressed to reduce upload time.`);
+      }
+      
+      // Check if it's an image
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file.');
+        return;
+      }
+    }
+    
     setSelectedFile(file);
     onChange(file);
   };
