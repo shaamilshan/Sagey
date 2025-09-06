@@ -72,6 +72,33 @@ try {
 app.use("/api/img", express.static(__dirname + "/public/products/"));
 app.use("/api/off", express.static(__dirname + "/public/official/"));
 
+// Error handling middleware
+app.use((error, req, res, next) => {
+  console.error('Server Error:', {
+    message: error.message,
+    stack: error.stack,
+    url: req.url,
+    method: req.method
+  });
+  
+  if (error.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ 
+      error: 'File too large. Maximum file size is 10MB' 
+    });
+  }
+  
+  if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+    return res.status(400).json({ 
+      error: 'Unexpected file field' 
+    });
+  }
+  
+  res.status(500).json({ 
+    error: 'Internal Server Error',
+    details: process.env.NODE_ENV === 'development' ? error.message : undefined
+  });
+});
+
 // Serve React app for all other routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));

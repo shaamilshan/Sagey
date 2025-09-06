@@ -34,17 +34,19 @@ const productSlice = createSlice({
       // Creating new Product
       .addCase(createProduct.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(createProduct.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.error = null;
-        state.products = [...state.products, payload];
+        if (payload && payload.product) {
+          state.products = [...state.products, payload.product];
+          state.totalAvailableProducts = (state.totalAvailableProducts || 0) + 1;
+        }
       })
       .addCase(createProduct.rejected, (state, { payload }) => {
         state.loading = false;
-        state.products = null;
-        state.error = payload;
-        state.totalAvailableProducts = state.totalAvailableProducts + 1;
+        state.error = payload || "Failed to create product";
       })
 
       // Updating a product

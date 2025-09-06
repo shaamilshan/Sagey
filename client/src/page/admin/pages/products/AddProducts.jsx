@@ -17,13 +17,26 @@ const AddProducts = () => {
 
   const navigate = useNavigate();
 
-  const { categories, loading, error } = useSelector(
+  const { categories, loading: categoriesLoading, error: categoriesError } = useSelector(
     (state) => state.categories
+  );
+  const { loading: productsLoading, error: productsError } = useSelector(
+    (state) => state.products
   );
 
   useEffect(() => {
     dispatch(getCategories());
   }, []);
+
+  // Show error messages from Redux state
+  useEffect(() => {
+    if (productsError) {
+      toast.error(`Product Error: ${productsError}`);
+    }
+    if (categoriesError) {
+      toast.error(`Categories Error: ${categoriesError}`);
+    }
+  }, [productsError, categoriesError]);
 
   const [statusList, setStatusList] = useState([
     "Draft",
@@ -54,53 +67,97 @@ const AddProducts = () => {
   };
 
   const handleSave = async () => {
+    // Prevent multiple submissions
+    if (productsLoading) {
+      toast.error("Please wait, product is being created...");
+      return;
+    }
+
+    // Validation
+    if (!name || name.trim() === "") {
+      toast.error("Product name is required");
+      return;
+    }
+    if (!description || description.trim() === "") {
+      toast.error("Product description is required");
+      return;
+    }
+    if (!category) {
+      toast.error("Please select a category");
+      return;
+    }
+    if (!imageURL) {
+      toast.error("Product thumbnail image is required");
+      return;
+    }
+    if (!price || price <= 0) {
+      toast.error("Price should be greater than 0");
+      return;
+    }
+
     var newStockQuantity = stockQuantity;
     if (stockQuantity <= 0) {
       newStockQuantity = 100;
     }
-    if (price <= 0) {
-      toast.error("Price Should be greater than 0");
-      return;
-    }
   
     const formData = new FormData();
-    formData.append("name", name);
-    formData.append("description", description);
+    formData.append("name", name.trim());
+    formData.append("description", description.trim());
     formData.append("stockQuantity", newStockQuantity);
     formData.append("attributes", JSON.stringify(attributes));
     formData.append("price", price);
+    formData.append("markup", markup || 0);
     formData.append("category", category);
-    formData.append("offer", offer);
+    formData.append("offer", offer || 0);
     formData.append("status", status.toLowerCase());
 
-  
     try {
       // Compress the main image
-      const compressedImageURL = await imageCompression(imageURL, {
-        maxSizeMB: 5, // Maximum file size (5 MB)
-        maxWidthOrHeight: 1920, // Maximum width or height
-        useWebWorker: true, // Use a web worker for better performance
-      });
-      formData.append("imageURL", compressedImageURL);
-  
-      // Compress additional images
-      for (const file of moreImageURL) {
-        const compressedFile = await imageCompression(file, {
-          maxSizeMB: 5,
+      if (imageURL && imageURL instanceof File) {
+        const compressedImageURL = await imageCompression(imageURL, {
+          maxSizeMB: 4, // Reduced to 4MB for better compatibility
           maxWidthOrHeight: 1920,
           useWebWorker: true,
         });
-        formData.append("moreImageURL", compressedFile);
+        formData.append("imageURL", compressedImageURL);
+        console.log("Main image compressed:", {
+          original: imageURL.size,
+          compressed: compressedImageURL.size
+        });
       }
-      formData.forEach((key, value)=>{
-        console.log(key, value);
-      })
   
-      dispatch(createProduct(formData));
-      navigate(-1);
+      // Compress additional images if they exist
+      if (moreImageURL && Array.isArray(moreImageURL) && moreImageURL.length > 0) {
+        for (const file of moreImageURL) {
+          if (file instanceof File) {
+            const compressedFile = await imageCompression(file, {
+              maxSizeMB: 4,
+              maxWidthOrHeight: 1920,
+              useWebWorker: true,
+            });
+            formData.append("moreImageURL", compressedFile);
+            console.log("Additional image compressed:", {
+              original: file.size,
+              compressed: compressedFile.size
+            });
+          }
+        }
+      }
+
+      // Debug FormData contents
+      console.log("FormData contents:");
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+      }
+  
+      const result = await dispatch(createProduct(formData));
+      if (createProduct.fulfilled.match(result)) {
+        toast.success("Product created successfully!");
+        navigate(-1);
+      }
     } catch (error) {
-      console.error("Image compression error:", error);
-      toast.error("Failed to compress images. Please try again.");
+      console.error("Product creation error:", error);
+      toast.error(`Failed to create product: ${error.message}`);
     }
   };
 
@@ -168,9 +225,10 @@ const AddProducts = () => {
             <button
               className="admin-button-fl bg-blue-700 text-white"
               onClick={toggleConfirm}
+              disabled={productsLoading}
             >
               <AiOutlineSave />
-              Save
+              {productsLoading ? "Saving..." : "Save"}
             </button>
           </div>
         </div>

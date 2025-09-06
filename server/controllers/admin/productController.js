@@ -76,26 +76,73 @@ const addProduct = async (req, res) => {
     let formData = { ...req.body, isActive: true };
     const files = req?.files;
 
-    const attributes = JSON.parse(formData.attributes);
+    // Validation
+    if (!formData.name || formData.name.trim() === "") {
+      throw new Error("Product name is required");
+    }
+    if (!formData.description || formData.description.trim() === "") {
+      throw new Error("Product description is required");
+    }
+    if (!formData.category) {
+      throw new Error("Product category is required");
+    }
+    if (!formData.price || formData.price <= 0) {
+      throw new Error("Product price must be greater than 0");
+    }
+    
+    // Parse attributes
+    if (formData.attributes) {
+      try {
+        const attributes = JSON.parse(formData.attributes);
+        formData.attributes = attributes;
+      } catch (error) {
+        throw new Error("Invalid attributes format");
+      }
+    } else {
+      formData.attributes = [];
+    }
 
-    formData.attributes = attributes;
-
+    // Handle file uploads
     if (files && files.length > 0) {
       formData.moreImageURL = [];
       formData.imageURL = "";
-      files.map((file) => {
+      
+      let hasMainImage = false;
+      files.forEach((file) => {
+        console.log('Processing file:', {
+          fieldname: file.fieldname,
+          filename: file.filename,
+          size: file.size
+        });
+        
         if (file.fieldname === "imageURL") {
           formData.imageURL = file.filename;
-        } else {
+          hasMainImage = true;
+        } else if (file.fieldname === "moreImageURL") {
           formData.moreImageURL.push(file.filename);
         }
       });
+      
+      if (!hasMainImage) {
+        throw new Error("Product thumbnail image is required");
+      }
+    } else {
+      throw new Error("Product thumbnail image is required");
     }
+
+    console.log('Creating product with data:', {
+      name: formData.name,
+      category: formData.category,
+      price: formData.price,
+      imageURL: formData.imageURL,
+      moreImageCount: formData.moreImageURL ? formData.moreImageURL.length : 0
+    });
 
     const product = await Product.create(formData);
 
     res.status(200).json({ product });
   } catch (error) {
+    console.error('Product creation error:', error);
     res.status(400).json({ error: error.message });
   }
 };
